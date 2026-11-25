@@ -16,6 +16,15 @@ def afficherGrille(terrain: Terrain):
         print()
 
 def deplacerRobot(terrain: Terrain, robot: Robot):
+
+
+    print("**********************Tuto pour deplacer le robo:******************")
+    print (" touches z ->Entrer pour monter")
+    print (" touches s ->Entrer pour descendre")
+    print (" touches d ->Entrer pour un pas à droite")
+    print (" touches a ->Entrer pour un pas à gauche")
+    print("**********************Tuto pour deplacer le robo:******************")
+
     direction = ''
     resp = True
     while (direction != 'q') and resp:
