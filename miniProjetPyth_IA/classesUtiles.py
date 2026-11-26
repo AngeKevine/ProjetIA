@@ -1,4 +1,8 @@
 
+############ Etape 1: Modelisation Environnement #################################
+
+#Classe pour Modeliser un Materiel à transporter
+# (lignePos, colPos) represente la position de ce materiel sur la grille
 class Materiel:
 
     def __init__(self, nom, poids, nature, lignePos=0, colPos=0, etat="En_STOCK"):
@@ -10,6 +14,8 @@ class Materiel:
         self.colPos = colPos
         self.etat = etat
 
+#Classe pour Modeliser un Obstacle sur la grille
+# (lignePos, colPos) represente la position de cet Obstacle sur la grille
 class Obstacle:
 
     def __init__(self, nom ="#",lignePos=0, colPos=0):
@@ -19,10 +25,12 @@ class Obstacle:
         self.colPos = colPos
 
 
-
+#Classe pour Modeliser un Robot
+# (ligne, col) represente la position de ce Robot sur la grille
+# un Robot peu effectuer plusieurs action, implementer par les méthodes chargerMateriel(), dechargerMateriel()
 class Robot:
     def __init__(self, capaciteMax, capaciteRestante, nom, depot,  ligne=0, col=0, charges =[]):
-        # Attributs d'instance
+    
         self.nom = nom
         self.capaciteMax = capaciteMax
         self.capaciteRestante = capaciteRestante
@@ -31,21 +39,26 @@ class Robot:
         self.col = col
         self.charges = charges
 
+    #Cet methode charge un materiel dans le Robot
     def chargerMateriel(self, materiel: Materiel):
         if self.capaciteRestante != 0:
             self.charges.append(materiel)
             self.capaciteRestante = self.capaciteRestante - materiel.Poids
-            materiel.etat = "TRANSPORTE"
+            materiel.etat = "TRANSPORTE"  # lorsqu'un Materiel est chargé dans un Robot, son état passe en mode TRANSPORTE
         else:
             print("Charge maximale du robot atteinte")
 
+
+    #Cet methode décharge un materiel du Robot    
     def dechargerMateriel(self, materiel: Materiel):
             if self.capaciteRestante != self.capaciteMax:
                 self.charges.pop(materiel)
                 self.capaciteRestante = self.capaciteRestante + materiel.Poids
-                materiel.etat = "LIVRE"
+                materiel.etat = "LIVRE" # lorsqu'un Materiel est déchargé du Robot, son état passe en mode LIVRE
             else:
                 print("Robot déjà vide")
+
+    # Methode pas forcement utile, juste si besoin d'afficher les caractéristiques d'un robot
     def afficherContenuRob(self):
         print("Robot ", self.nom, ": charges:")
         for c in self.charges:
@@ -57,8 +70,13 @@ def creer_matrice(nb_lignes, nb_colonnes, valeur='.'):
     return [[valeur for _ in range(nb_colonnes)] for _ in range(nb_lignes)]
 
 
+#Classe pour Modeliser un la Grille, le Terrai sur le quel le Robot va se déplacer
+# nbrLignes=6 et nbrColonnes representent la taille de la Grille
+# matrice represente la matrice qui va contenir toutes les cases de la grille
+# un Terrain doit etre initialiser manuellement avec initialiserTerrain() pour qu'il soit utile dans la Tournee
+# Sur un Terrain, on peu effectuer plusieurs action comme: placerRobot(robot: Robot), deplacerGauche(robot: Robot),...
 class Terrain:
-    # Attribut de classe (partagé par toutes les instances)
+    # Attribut de classe (partagé par toutes les instances de Terrain)
     liste_robots = []
 
     def __init__(self, nbrLignes=6, nbrColonnes=6):
@@ -69,6 +87,7 @@ class Terrain:
         self.occupations = []
 
 
+    #Cet methode le Robot "robot" sur la grille du Terrain
     def placerRobot(self, robot: Robot):
             if 0 <= robot.ligne < self.nbrLignes and 0 <= robot.col < self.nbrColonnes:
                 self.matrice[robot.ligne][robot.col] = robot
@@ -92,7 +111,7 @@ class Terrain:
 
 
 
-
+    #Cet methode permet de déplacer un robot du Terrain vers la Gauche, pareil pour les méthodes du mème type: Droite, Haut, Bas
     def deplacerGauche(self, robot: Robot):
 
         celluleGauche = self.matrice[robot.ligne][robot.col-1]
@@ -211,7 +230,7 @@ class Terrain:
             return False
 
 
-
+# Une Tournee, pour le moment pas utile, passer à une autre Classe
 class Tournee:
 
     def __init__(self, terrain: Terrain, listeRobots, listeMateriaux, matrAssignation = [{"R1Test":["M1Test"]}, {"R2Test":["M2kTest"]}]):
@@ -220,4 +239,145 @@ class Tournee:
         self.listeRobots = listeRobots
         self.listeMateriaux = listeMateriaux
         self.matrAssignation = matrAssignation
+
+
+
+
+
+
+############ Etape 2: Recherche heuristique#################################
+
+
+
+# une classe Noeud pour modiliser les états possibles du domaine de recherche
+# un noeud correspond à un état (actuel ou pas), il a un parent noeudParent (état précédent)
+#   et la distance déjà parcourue en arrivant à ce noeud: gDistParc
+#   et la distance Heuristique restant à parcourir en arrivant à ce noeud: heurustq
+
+class NoeudHeuristique():
+    def __init__(self, ligne=0, col=0, noeudParent=None, gDistParc=0, heurustq=0):
+        self.ligne = ligne
+        self.col = col
+        self.noeudParent=noeudParent
+        self.gDistParc =gDistParc
+        self.heurustq=heurustq
+
+        self.fonctionHeur = self.gDistParc+self.heurustq # calcul du f = g+h
+
+
+
+# On veux qu'une recherche Heuristique ne soit lancée qu'avec une classe ParcourHeuristiq via la méthode solutionHeuristq() plus bas 
+class ParcourHeuristiq:
+
+    def __init__(self, robot: Robot, terrain: Terrain, noeudsOuverts=[], noeudsFermes=[], noeudsChemin=[], distanceParc=0):
+        noeudCourant = NoeudHeuristique(robot.ligne, robot.col, None, 0)
+        self.noeudCourant: NoeudHeuristique = noeudCourant
+        self.butHeuristq = robot.depot
+        self.noeudsOuverts = noeudsOuverts
+        self.terrain = terrain
+        self.noeudsFermes = noeudsFermes
+        self.noeudsChemin = noeudsChemin
+        self.distanceParc = distanceParc
+
+
+
+    # Permet d'estimer une heuristique pour un Etat/noeud: distance de Manhathan, d'Euler etc...
+    def approximHeuristq(self, noeud: NoeudHeuristique):
+
+        deltaLigne = abs(noeud.ligne - self.butHeuristq[0])
+        deltaCol = abs(noeud.col- self.butHeuristq[1])
+
+        return deltaLigne+deltaCol
+
+
+    
+    # juste pour inserer un noeud dans une liste de noeud de manière ordonnée: utile plus bas dans solutionHeuristq
+    def insererNoeudHeur(self, noeud: NoeudHeuristique, listeNoeuds):
+        count = 0
+        if( len(listeNoeuds)==0 ):
+            listeNoeuds.insert(count, noeud)
+        else:
+            while(  count< len(listeNoeuds)-1 and noeud.fonctionHeur< listeNoeuds[count].fonctionHeur  ):
+                count=count+1
+            if(count< len(listeNoeuds)-1):
+                listeNoeuds[count] = noeud
+            else: listeNoeuds[count-1] = noeud
+
+
+    # Pour déterminer les potentiels etats suivants après l'état actuel: utile plus bas dans solutionHeuristq
+    def successeursNoeud(self, noeud: NoeudHeuristique):
+
+        listSuccrs =[]
+        
+        succHaut=NoeudHeuristique(noeud.ligne-1, noeud.col, noeud, noeud.gDistParc+1)
+        succHaut.heurustq = self.approximHeuristq(succHaut)
+
+        if(noeud.ligne-1 >0):
+            if(    not isinstance(self.terrain.matrice[noeud.ligne-1][noeud.col], Obstacle)   ):
+                listSuccrs.append(succHaut)
+
+
+        succBas=NoeudHeuristique(noeud.ligne+1, noeud.col, noeud, noeud.gDistParc+1)
+        succBas.heurustq = self.approximHeuristq(succBas)
+
+        if(noeud.ligne+1 < self.terrain.nbrLignes):
+            if(    not isinstance(self.terrain.matrice[noeud.ligne+1][noeud.col], Obstacle)   ):
+                listSuccrs.append(succBas)
+
+
+        succDroite=NoeudHeuristique(noeud.ligne, noeud.col+1, noeud, noeud.gDistParc+1)
+        succDroite.heurustq = self.approximHeuristq(succDroite)
+
+        if(noeud.col+1 < self.terrain.nbrColonnes):
+            if(    not isinstance(self.terrain.matrice[noeud.ligne][noeud.col+1], Obstacle)   ):
+                listSuccrs.append(succDroite)
+
+
+        succGauche=NoeudHeuristique(noeud.ligne, noeud.col-1, noeud, noeud.gDistParc+1)
+        succGauche.heurustq = self.approximHeuristq(succGauche)
+
+        if(noeud.col-1 >0):
+            if(    not isinstance(self.terrain.matrice[noeud.ligne][noeud.col-1], Obstacle)   ):
+                listSuccrs.append(succGauche)
+
+
+        return listSuccrs
+
+
+
+    # Cette méthode calcule avec l'algorithme d'Heuristique A* un  chemin plus ou moin optimisé pour le parcours de la grille 
+    #   et renvoie la liste des noeuds à traverser pour ce chemin
+    def solutionHeuristq(self) -> list[NoeudHeuristique]: 
+
+        self.insererNoeudHeur(self.noeudCourant, self.noeudsOuverts)
+
+        MAXParcors=0
+        while True and MAXParcors < 15:
+            MAXParcors=MAXParcors+1
+            if(self.noeudsOuverts==None):
+                print("Echec Recherche Heuristique, aucun noeud ouvert")
+                return None
+
+            self.noeudCourant = self.noeudsOuverts.pop()
+            self.noeudsChemin.append(self.noeudCourant)
+
+            self.insererNoeudHeur(self.noeudCourant, self.noeudsFermes)
+
+            if( ( self.noeudCourant.ligne, self.noeudCourant.col ) == self.butHeuristq ):
+                print("Solution Heuristiq trouvee")
+                return self.noeudsChemin
+
+            listSuccesseursNdCourant = self.successeursNoeud(self.noeudCourant)
+
+            for nd in listSuccesseursNdCourant:
+                self.insererNoeudHeur(nd, self.noeudsOuverts)
+
+            
+
+
+        
+        
+
+
+        
         

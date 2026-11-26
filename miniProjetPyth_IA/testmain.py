@@ -1,5 +1,7 @@
-from classesUtiles import Robot, Terrain, Materiel, Obstacle
+from classesUtiles import Robot, Terrain, Materiel, Obstacle, ParcourHeuristiq
 
+
+######################################## Fonction Utiles #######################################
 
 def afficherGrille(terrain: Terrain):
     print("Grille du terrain :")
@@ -44,24 +46,49 @@ def deplacerRobot(terrain: Terrain, robot: Robot):
                 resp =terrain.deplacerGauche(robot)
             case _:
                 print("Touche non reconnue. Utilisez z, s, q, d ou a.")
-        afficherGrille(t)
+        afficherGrille(terrain)
+
+######################################## fin fonction Utiles #######################################
 
 
 
+############ Programme Test Etape 1:Modelisation Environnement #################################
+def testProg1():
+    r1 = Robot(10, 10, "R1", (5,4), 2,3 )
+    print (r1.nom)
+    print(r1.depot)
+    r1.depot=(1,1)
+    print(r1.depot)
 
-r1 = Robot(10, 10, "R1", (5,4), 2,3 )
-print (r1.nom)
-print(r1.depot)
-r1.depot=(1,1)
-print(r1.depot)
+    t = Terrain()
+    afficherGrille(t)
+    t.initialiserTerrain()
+    afficherGrille(t)
 
-t = Terrain()
-afficherGrille(t)
-t.initialiserTerrain()
-afficherGrille(t)
+    deplacerRobot(t, r1)
 
-deplacerRobot(t, r1)
+############ Fin de Programme Test Etape 1: Modelisation Environnement #################################
 
+
+
+############ Programme Test Etape 2: Recherche heuristique#################################
+def testProg2Heuristique():
+    r1 = Robot(10, 10, "R1", (5,4), 2,3 )
+    t = Terrain()
+    afficherGrille(t)
+
+    parcoursHeurRobo1= ParcourHeuristiq(r1, t)
+
+    for cel in parcoursHeurRobo1.solutionHeuristq():
+        print( "("+cel.ligne+ cel.col +")", end="-->")
+
+############ Fin de programme test Etape 2: Recherche heuristique#################################
+
+# Décommenter le programme que vous voulez tester:
+
+
+testProg1()
+#testProg2Heuristique()
 
     
 
