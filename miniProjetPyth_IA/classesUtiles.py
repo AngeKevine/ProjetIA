@@ -273,9 +273,9 @@ class ParcourHeuristiq:
         noeudCourant = NoeudHeuristique(robot.ligne, robot.col, None, 0)
         self.noeudCourant: NoeudHeuristique = noeudCourant
         self.butHeuristq = robot.depot
-        self.noeudsOuverts = noeudsOuverts
+        self.noeudsOuverts: list = noeudsOuverts
         self.terrain = terrain
-        self.noeudsFermes = noeudsFermes
+        self.noeudsFermes: list = noeudsFermes
         self.noeudsChemin = noeudsChemin
         self.distanceParc = distanceParc
 
@@ -300,8 +300,8 @@ class ParcourHeuristiq:
             while(  count< len(listeNoeuds)-1 and noeud.fonctionHeur< listeNoeuds[count].fonctionHeur  ):
                 count=count+1
             if(count< len(listeNoeuds)-1):
-                listeNoeuds[count] = noeud
-            else: listeNoeuds[count-1] = noeud
+                listeNoeuds.insert(count, noeud)
+            else: listeNoeuds.insert(count-1, noeud)
 
 
     # Pour déterminer les potentiels etats suivants après l'état actuel: utile plus bas dans solutionHeuristq
@@ -354,7 +354,7 @@ class ParcourHeuristiq:
         MAXParcors=0
         while True and MAXParcors < 15:
             MAXParcors=MAXParcors+1
-            if(self.noeudsOuverts==None):
+            if( len(self.noeudsOuverts)==0 ):
                 print("Echec Recherche Heuristique, aucun noeud ouvert")
                 return None
 

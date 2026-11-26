@@ -87,8 +87,8 @@ def testProg2Heuristique():
 # Décommenter le programme que vous voulez tester:
 
 
-testProg1()
-#testProg2Heuristique()
+#testProg1()
+testProg2Heuristique()
 
     
 
