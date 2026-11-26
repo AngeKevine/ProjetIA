@@ -1,21 +1,13 @@
-from classesUtiles import Robot, Terrain
-from simulation import simuler_chemins, recuperer_positions
+from environnement import Robot, Environnement
+from simulation import executer_deplacements, recuperer_positions, simuler_chemins
 
 
 def creer_terrain():
 
-    r1 = Robot(10, 10, "R1", (5, 4), 1, 1, charges=[])
-    r2 = Robot(8, 8, "R2", (5, 5), 1, 2, charges=[])
+    r1 = Robot("R1", 10, (1, 1), (5, 4))
+    r2 = Robot("R2", 8, (1, 2), (5, 5))
 
-    terrain = Terrain()
-
-    terrain.initialiserTerrain(
-        listeObst=[],
-        listeRobs=[r1, r2],
-        listeMateriels=[]
-    )
-
-    return terrain
+    return Environnement(6, 6, [], [r1, r2], [])
 
 
 # Test 1 : simulation réussie
@@ -29,7 +21,7 @@ chemins = {
 
 assert simuler_chemins(terrain, chemins) == "CHEMINS_TERMINES"
 
-assert recuperer_positions(terrain.liste_robots) == {
+assert recuperer_positions(terrain.robots) == {
     "R1": (1, 3),
     "R2": (1, 4)
 }

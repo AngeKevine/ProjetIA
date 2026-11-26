@@ -1,51 +1,24 @@
-from classesUtiles import Robot, Terrain
+from environnement import Robot, Environnement, creer_environnement
 from sma import coordonner_deplacements, mettre_a_jour_blocage
+from csp import resoudre_csp
+from logique import creer_faits, decider
 # Cette fonction transforme automatiquement les objets Robot en un dictionnaire que notre SMA sait utiliser.
 
 def recuperer_positions(robots):
-
     positions = {}
 
     for robot in robots:
-        positions[robot.nom] = (robot.ligne, robot.col)
+        positions[robot.nom] = robot.position
 
     return positions
 #On calcule la différence entre la position actuelle et la destination:
-def deplacer_vers(terrain, robot, destination): #déplacer le robot d’une seule case vers destination.
-
-    ligne, col = destination
-
-    if not (0 <= ligne < terrain.nbrLignes
-            and 0 <= col < terrain.nbrColonnes):
-        return False
-
-    if terrain.matrice[ligne][col] != ".":
-        return False
-#Calculer la direction:
-    delta_ligne = ligne - robot.ligne
-    delta_col = col - robot.col
-# verifier Mouvement : Droite, Gauche, Haut, Bas
-    if (delta_ligne, delta_col) == (0, 1):
-        terrain.deplacerDroite(robot)
-
-    elif (delta_ligne, delta_col) == (0, -1):
-        terrain.deplacerGauche(robot)
-
-    elif (delta_ligne, delta_col) == (-1, 0):
-        terrain.deplacerHaut(robot)
-
-    elif (delta_ligne, delta_col) == (1, 0):
-        terrain.deplacerBas(robot)
-
-    else:
-        return False
-#Vérifier le résultat:
-    return (robot.ligne, robot.col) == destination
+def deplacer_vers(terrain, robot, destination):
+    return terrain.deplacer(robot, destination)
 #Relier le SMA aux déplacements
 #exécuter_deplacements : prend les destinations souhaités par les robots ,demande quels déplacements sont autorisés.
 def executer_deplacements(terrain, intentions):
 # donne la liste des robots:
-    robots = terrain.liste_robots
+    robots = terrain.robots
 
     positions = recuperer_positions(robots)
 #reçoit les positions actuelles et les destinations souhaitées.
@@ -111,7 +84,7 @@ def simuler_chemins(terrain, chemins, max_tours=50):
         print("Intentions :", intentions)
         print("Déplacements :", resultats)
         print("Positions :", recuperer_positions(
-            terrain.liste_robots
+            terrain.robots
         ))
 
         if blocage:
@@ -122,19 +95,43 @@ def simuler_chemins(terrain, chemins, max_tours=50):
             return "CHEMINS_TERMINES"
 
     return "LIMITE_TOURS" #S"	Le nombre maximal de tours a été atteint et il reste des étapes à parcourir.
+# Initialisation de la simulation avec le CSP et la logique
+def initialiser_simulation(env):
+
+    affectation = resoudre_csp(
+        env.robots, env.materiaux
+    )
+
+    if affectation is None:
+        print("CSP insoluble")
+        return None, None
+
+    faits = creer_faits(
+        env.robots, env.materiaux, affectation
+    )
+
+    return affectation, faits
+
+def recuperer_decisions(env, faits):
+
+    decisions = {}
+
+    for robot in env.robots:
+
+        action, regle = decider(robot.nom, faits)
+
+        decisions[robot.nom] = action
+
+        print(robot.nom, ":", regle)
+
+    return decisions
 # Tester la simulation avec deux robots et des chemins prédéfinis
 if __name__ == "__main__":
 
-    r1 = Robot(10, 10, "R1", (5, 4), 1, 1, charges=[])
-    r2 = Robot(8, 8, "R2", (5, 5), 1, 2, charges=[])
+    r1 = Robot("R1", 10, (1, 1), (5, 4))
+    r2 = Robot("R2", 8, (1, 2), (5, 5))
 
-    terrain = Terrain()
-
-    terrain.initialiserTerrain(
-        listeObst=[],
-        listeRobs=[r1, r2],
-        listeMateriels=[]
-    )
+    terrain = Environnement(6, 6, [], [r1, r2], [])
 
     chemins = {
         "R1": [(1, 2), (1, 3)],
@@ -144,30 +141,4 @@ if __name__ == "__main__":
     resultat = simuler_chemins(terrain, chemins)
 
     print("\nRésultat final :", resultat)
-
-#Tester avec deux véritables robots: 
-if __name__ == "__main__":
-#5,4 : son déôpt, 0,1 : sa position de départ, charges = [] : il transport rien au départ.
-    r1 = Robot(10, 10, "R1", (5, 4), 0, 1, charges=[])
-    r2 = Robot(8, 8, "R2", (5, 5), 0, 3, charges=[])
-
-    terrain = Terrain()
-
-    terrain.initialiserTerrain(
-        listeObst=[],
-        listeRobs=[r1, r2],
-        listeMateriels=[]
-    )
-
-    intentions = {
-        "R1": (0, 2),
-        "R2": (0, 2)
-    }
-
-    print("Avant :", recuperer_positions([r1, r2]))
-
-    resultats = executer_deplacements(terrain, intentions)
-
-    print("Déplacements :", resultats)
-    print("Après :", recuperer_positions([r1, r2]))
 
